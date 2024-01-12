@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>React Grid Paper Generator</title>
+  <!-- 引入 Bootstrap -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body class="bg-light">
+
+<div class="container mt-5">
+  <div class="card">
+    <div class="card-header">
+      <h5 class="card-title">React Grid Paper Generator</h5>
+    </div>
+    <div class="card-body">
+      <div id="root"></div>
+    </div>
+  </div>
+</div>
+
+<!-- 引入 React、ReactDOM、jsPDF 和 Babel -->
+<script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
+<script src="https://cdn.jsdelivr.net/npm/jspdf@2.4.0/dist/jspdf.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@babel/standalone@7.16.7/babel.min.js"></script>
+
+<!-- 使用 Babel 处理 JSX 代码 -->
+<script type="text/babel">
+  const { useState, useEffect } = React;
+  const { jsPDF } = jspdf;
+
+  // 使用 Babel 处理 JSX 代码
+  const App = ({ children }) => {
+    return React.createElement('div', null, children);
+  };
+
+  const GridPaperGenerator = () => {
+    const [gridWidth, setGridWidth] = useState(10);
+    const [gridHeight, setGridHeight] = useState(10);
+    const [marginTop, setMarginTop] = useState(10);
+    const [marginRight, setMarginRight] = useState(10);
+    const [marginBottom, setMarginBottom] = useState(10);
+    const [marginLeft, setMarginLeft] = useState(10);
+    const [lineStyle, setLineStyle] = useState('solid');
+    const [lineColor, setLineColor] = useState({ r: 0, g: 0, b: 0 });
+    const [lineWidth, setLineWidth] = useState(0.5);
+    const [lineOpacity, setLineOpacity] = useState(1);
+
+      const generatePDF = () => {
+        const pdf = new jsPDF();
+        const a4Width = 210;
+        const a4Height = 297;
+
+        const rows = Math.floor((a4Height - marginTop - marginBottom) / gridHeight);
+        const cols = Math.floor((a4Width - marginLeft - marginRight) / gridWidth);
+
+        const adjustedMarginTop = Math.floor((a4Height - rows * gridHeight) / 2);
+        const adjustedMarginBottom = a4Height - adjustedMarginTop - rows * gridHeight;
+
+        const adjustedMarginLeft = Math.floor((a4Width - cols * gridWidth) / 2);
+        const adjustedMarginRight = a4Width - adjustedMarginLeft - cols * gridWidth;
+
+        // 根据线条样式设置线型
+        switch (lineStyle) {
+          case 'dashed':
+            pdf.setLineDash([1, 1]);
+            break;
+          case 'dotted':
+            pdf.setLineDash([0.5, 0.5]);
+            break;
+          default:
+            // 默认为实线
+            pdf.setLineDash([]);
+        }
+
+        // 设置线条颜色
+        pdf.setDrawColor(lineColor.r, lineColor.g, lineColor.b);
+
+        // 设置线条宽度
+        pdf.setLineWidth(lineWidth/10);
+
+        // // 设置线条透明度
+        // pdf.setDrawOpacity(lineOpacity);
+
+        // 绘制横线
+        for (let i = 0; i <= rows; i++) {
+          const y = adjustedMarginTop + i * gridHeight;
+          pdf.line(adjustedMarginLeft, y, adjustedMarginLeft + cols * gridWidth, y);
+        }
+
+        // 绘制竖线
+        for (let j = 0; j <= cols; j++) {
+          const x = adjustedMarginLeft + j * gridWidth;
+          pdf.line(x, adjustedMarginTop, x, adjustedMarginTop + rows * gridHeight);
+        }
+
+        // 生成文件名
+        const fileName = `GridPaper_${gridWidth}x${gridHeight}_Color${lineColor.r}-${lineColor.g}-${lineColor.b}_Width${lineWidth}_Opacity${lineOpacity}.pdf`;
+
+        pdf.save(fileName);
+      };
+
+      const handleGridWidthChange = (value) => {
+        setGridWidth(value);
+        // 如果没有调整过格子的高度，则让它跟随着格子的宽度变化
+        if (gridHeight === gridWidth) {
+          setGridHeight(value);
+        }
+      };
+
+      const handleMarginLeftChange = (value) => {
+        setMarginLeft(value);
+        // 如果右边界没有单独修改过，跟随左边界变化
+        if (marginRight === marginLeft) {
+          setMarginRight(value);
+        }
+      };
+
+      const handleMarginTopChange = (value) => {
+        setMarginTop(value);
+        // 如果下边界没有单独修改过，跟随上边界变化
+        if (marginBottom === marginTop) {
+          setMarginBottom(value);
+        }
+      };
+
+      return (
+        <App>
+          <div>
+            <div className="mb-3">
+              <label htmlFor="gridWidthInput" className="form-label">格子宽度：</label>
+              <input
+                type="number"
+                id="gridWidthInput"
+                className="form-control"
+                value={gridWidth}
+                onChange={(e) => handleGridWidthChange(parseInt(e.target.value) || 0)}
+              />
+            </div>
+
+            <div className="mb-3">
+              <label htmlFor="gridHeightInput" className="form-label">格子高度：</label>
+              <input
+                type="number"
+                id="gridHeightInput"
+                className="form-control"
+                value={gridHeight}
+                onChange={(e) => setGridHeight(parseInt(e.target.value) || 0)}
+              />
+            </div>
+
+            <div className="mb-3">
+              <label htmlFor="marginTopInput" className="form-label">上边距：</label>
+              <input
+                type="number"
+                id="marginTopInput"
+                className="form-control"
+                value={marginTop}
+                onChange={(e) => handleMarginTopChange(parseInt(e.target.value) || 0)}
+              />
+            </div>
+
+            <div className="mb-3">
+              <label htmlFor="marginBottomInput" className="form-label">下边距：</label>
+              <input
+                type="number"
+                id="marginBottomInput"
+                className="form-control"
+                value={marginBottom}
+                onChange={(e) => setMarginBottom(parseInt(e.target.value) || 0)}
+              />
+            </div>
+
+            <div className="mb-3">
+              <label htmlFor="marginLeftInput" className="form-label">左边距：</label>
+              <input
+                type="number"
+                id="marginLeftInput"
+                className="form-control"
+                value={marginLeft}
+                onChange={(e) => handleMarginLeftChange(parseInt(e.target.value) || 0)}
+              />
+            </div>
+
+            <div className="mb-3">
+              <label htmlFor="marginRightInput" className="form-label">右边距：</label>
+              <input
+                type="number"
+                id="marginRightInput"
+                className="form-control"
+                value={marginRight}
+                onChange={(e) => setMarginRight(parseInt(e.target.value) || 0)}
+              />
+            </div>
+
+
+
+            <div className="mb-3">
+              <label htmlFor="lineStyleSelect" className="form-label">线条样式：</label>
+              <select
+                id="lineStyleSelect"
+                className="form-select"
+                value={lineStyle}
+                onChange={(e) => setLineStyle(e.target.value)}
+              >
+                <option value="solid">实线</option>
+                <option value="dashed">点划线</option>
+                <option value="dotted">虚线</option>
+              </select>
+            </div>
+
+            <div className="mb-3">
+              <label htmlFor="lineColorInput" className="form-label">线条颜色：</label>
+              <input
+                type="color"
+                id="lineColorInput"
+                className="form-control"
+                value={`#${lineColor.r.toString(16).padStart(2, '0')}${lineColor.g.toString(16).padStart(2, '0')}${lineColor.b.toString(16).padStart(2, '0')}`}
+                onChange={(e) => {
+                  const hexColor = e.target.value.substring(1); // 去掉颜色值前面的#
+                  setLineColor({
+                    r: parseInt(hexColor.substring(0, 2), 16),
+                    g: parseInt(hexColor.substring(2, 4), 16),
+                    b: parseInt(hexColor.substring(4, 6), 16),
+                  });
+                }}
+              />
+            </div>
+
+            <div className="mb-3">
+              <label htmlFor="lineWidthInput" className="form-label">线条宽度：</label>
+              <input
+                type="number"
+                step="0.1"
+                id="lineWidthInput"
+                className="form-control"
+                value={lineWidth}
+                onChange={(e) => setLineWidth(parseFloat(e.target.value) || 0)}
+              />
+            </div>
+
+            <div className="mb-3">
+              <label htmlFor="lineOpacityInput" className="form-label">线条透明度：</label>
+              <input
+                type="range"
+                min="0"
+                max="1"
+                step="0.1"
+                id="lineOpacityInput"
+                className="form-range"
+                value={lineOpacity}
+                onChange={(e) => setLineOpacity(parseFloat(e.target.value))}
+              />
+            </div>
+
+            <button className="btn btn-primary" onClick={generatePDF}>生成PDF</button>
+          </div>
+        </App>
+      );
+    };
+
+  const container = document.getElementById('root');
+  const root = ReactDOM.createRoot(container);
+  root.render(<GridPaperGenerator />)
+</script>
+
+</body>
+</html>
