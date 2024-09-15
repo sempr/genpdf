@@ -103,6 +103,7 @@
             const pageHeight = doc.internal.pageSize.getHeight();
 
             let cellWidth, cellHeight, rows, cols;
+            let marginX=10, marginY=10;
 
             if (mode === 'rowsCols') {
                 // Calculate cell size based on rows and columns
@@ -121,8 +122,8 @@
                 const remainingWidth = pageWidth - (cols * cellWidth);
                 const remainingHeight = pageHeight - (rows * cellHeight);
 
-                var marginX = Math.max(minMargin, remainingWidth / 2);
-                var marginY = Math.max(minMargin, remainingHeight / 2);
+                marginX = Math.max(minMargin, remainingWidth / 2);
+                marginY = Math.max(minMargin, remainingHeight / 2);
             }
 
             // Set line width and color
