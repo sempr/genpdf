@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PDF Grid Generator</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+</head>
+<body>
+    <h1>Generate PDF with Grid</h1>
+
+    <label for="paperSize">Paper Size:</label>
+    <select id="paperSize">
+        <option value="A4">A4</option>
+        <option value="A5">A5</option>
+        <option value="A6">A6</option>
+    </select>
+
+    <label for="mode">Mode:</label>
+    <select id="mode" onchange="toggleInput()">
+        <option value="rowsCols">Rows and Columns</option>
+        <option value="size">Cell Size</option>
+    </select>
+
+    <div id="rowsColsInput">
+        <label for="rows">Rows:</label>
+        <input type="number" id="rows" value="10">
+
+        <label for="cols">Columns:</label>
+        <input type="number" id="cols" value="5">
+    </div>
+
+    <div id="sizeInput" style="display:none;">
+        <label for="cellWidth">Cell Width (in mm):</label>
+        <input type="number" id="cellWidth" value="20">
+
+        <label for="cellHeight">Cell Height (in mm):</label>
+        <input type="number" id="cellHeight" value="10">
+    </div>
+
+    <label for="lineWidth">Line Width (in mm):</label>
+    <input type="number" id="lineWidth" value="0.2" step="0.1">
+
+    <label for="lineColor">Line Color:</label>
+    <input type="color" id="lineColor" value="#000000">
+
+    <!-- Quick color selection buttons -->
+    <div>
+        <label>Quick Select Colors:</label>
+        <button style="background-color: #000000; width: 30px; height: 30px;" onclick="setColor('#000000')"></button>
+        <button style="background-color: #FF0000; width: 30px; height: 30px;" onclick="setColor('#FF0000')"></button>
+        <button style="background-color: #00FF00; width: 30px; height: 30px;" onclick="setColor('#00FF00')"></button>
+        <button style="background-color: #0000FF; width: 30px; height: 30px;" onclick="setColor('#0000FF')"></button>
+        <button style="background-color: #FFFF00; width: 30px; height: 30px;" onclick="setColor('#FFFF00')"></button>
+        <button style="background-color: #FFA500; width: 30px; height: 30px;" onclick="setColor('#FFA500')"></button>
+        <button style="background-color: #800080; width: 30px; height: 30px;" onclick="setColor('#800080')"></button>
+    </div>
+
+    <label for="dashed">Dashed Line:</label>
+    <input type="checkbox" id="dashed">
+
+    <label for="margin">Minimum Margin (in mm):</label>
+    <input type="number" id="margin" value="10" step="1">
+
+    <button onclick="generatePDF()">Generate PDF</button>
+
+    <script>
+        function toggleInput() {
+            const mode = document.getElementById('mode').value;
+            if (mode === 'rowsCols') {
+                document.getElementById('rowsColsInput').style.display = 'block';
+                document.getElementById('sizeInput').style.display = 'none';
+            } else {
+                document.getElementById('rowsColsInput').style.display = 'none';
+                document.getElementById('sizeInput').style.display = 'block';
+            }
+        }
+
+        function setColor(color) {
+            document.getElementById('lineColor').value = color;
+        }
+
+        function hexToRgb(hex) {
+            const bigint = parseInt(hex.substring(1), 16);
+            const r = (bigint >> 16) & 255;
+            const g = (bigint >> 8) & 255;
+            const b = bigint & 255;
+            return [r, g, b];
+        }
+
+        function generatePDF() {
+            const { jsPDF } = window.jspdf;
+            const paperSize = document.getElementById('paperSize').value;
+            const doc = new jsPDF('portrait', 'mm', paperSize);
+
+            const mode = document.getElementById('mode').value;
+            const lineWidth = parseFloat(document.getElementById('lineWidth').value);
+            const lineColor = document.getElementById('lineColor').value;
+            const isDashed = document.getElementById('dashed').checked;
+            const minMargin = parseFloat(document.getElementById('margin').value);
+
+            const pageWidth = doc.internal.pageSize.getWidth();
+            const pageHeight = doc.internal.pageSize.getHeight();
+
+            let cellWidth, cellHeight, rows, cols;
+
+            if (mode === 'rowsCols') {
+                // Calculate cell size based on rows and columns
+                rows = parseInt(document.getElementById('rows').value);
+                cols = parseInt(document.getElementById('cols').value);
+                cellWidth = (pageWidth - 2 * minMargin) / cols;
+                cellHeight = (pageHeight - 2 * minMargin) / rows;
+            } else {
+                // Calculate rows and columns based on cell size
+                cellWidth = parseFloat(document.getElementById('cellWidth').value);
+                cellHeight = parseFloat(document.getElementById('cellHeight').value);
+                rows = Math.floor((pageHeight - 2 * minMargin) / cellHeight);
+                cols = Math.floor((pageWidth - 2 * minMargin) / cellWidth);
+
+                // Adjust margins to center the grid
+                const remainingWidth = pageWidth - (cols * cellWidth);
+                const remainingHeight = pageHeight - (rows * cellHeight);
+
+                var marginX = Math.max(minMargin, remainingWidth / 2);
+                var marginY = Math.max(minMargin, remainingHeight / 2);
+            }
+
+            // Set line width and color
+            doc.setLineWidth(lineWidth);
+            const [r, g, b] = hexToRgb(lineColor);
+            doc.setDrawColor(r, g, b);
+
+            if (isDashed) {
+                // Set dash pattern [dash length, space length]
+                doc.setLineDashPattern([1, 1], 0);
+            }
+
+            // Draw horizontal lines
+            for (let row = 0; row <= rows; row++) {
+                const y = marginY + row * cellHeight;
+                doc.line(marginX, y, marginX + cols * cellWidth, y);
+            }
+
+            // Draw vertical lines
+            for (let col = 0; col <= cols; col++) {
+                const x = marginX + col * cellWidth;
+                doc.line(x, marginY, x, marginY + rows * cellHeight);
+            }
+
+            if (isDashed) {
+                doc.setLineDashPattern([], 0);
+            }
+
+            doc.save('grid.pdf');
+        }
+    </script>
+</body>
+</html>
